@@ -200,15 +200,19 @@ export function useAuction(gameId) {
   const placeBid = useCallback(
     async (gameTeamId, amount) => {
       try {
-        await apiPlaceBid(gameId, gameTeamId, amount, token);
-        // Also emit socket event so room gets real-time update
-        if (socketPlaceBid) socketPlaceBid(gameId, gameTeamId, amount);
+        // Use socket for real-time bidding (the socket handler already validates ownership)
+        if (socket?.connected) {
+          socket.emit('place-bid', { gameId, gameTeamId, amount });
+        } else {
+          // Fallback to HTTP if socket is not connected
+          await apiPlaceBid(gameId, gameTeamId, amount, token);
+        }
       } catch (err) {
         console.error('Bid error:', err);
         throw err;
       }
     },
-    [gameId, token, socketPlaceBid]
+    [gameId, token, socket]
   );
 
   return {

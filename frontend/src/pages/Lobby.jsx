@@ -56,8 +56,8 @@ export default function Lobby() {
       ]);
       setGame(stateData.game);
       setGameTeams(stateData.gameTeams || []);
-      // DRF router returns a paginated object { count, results } or plain array
-      const rawTeams = teamsData.results || teamsData;
+      // Node backend returns { teams: [...] }
+      const rawTeams = teamsData.teams || teamsData.results || teamsData;
       setAllTeams(Array.isArray(rawTeams) ? rawTeams : []);
 
       if (stateData.game.status !== 'waiting') {
@@ -65,12 +65,12 @@ export default function Lobby() {
         return;
       }
 
-      // Find my current team (using lowercase serializer fields)
+      // Find my current team — Node serializer uses capitalised 'User' & 'Team'
       const myGT = (stateData.gameTeams || []).find(
-        (gt) => gt.user?.id === userId
+        (gt) => (gt.User?.id ?? gt.userId) === userId
       );
       if (myGT) {
-        setSelectedTeamId(myGT.team?.id);
+        setSelectedTeamId(myGT.Team?.id ?? myGT.teamId);
       }
     } catch (err) {
       setError(err.message);
@@ -158,16 +158,17 @@ export default function Lobby() {
     }
   };
 
-  const isHost = game?.host?.id === userId;
+  // Node backend sends hostUserId (not nested host.id)
+  const isHost = game?.hostUserId === userId;
   const myGameTeam = gameTeams.find(
-    (gt) => gt.user?.id === userId
+    (gt) => (gt.User?.id ?? gt.userId) === userId
   );
   const takenTeamIds = gameTeams
-    .filter((gt) => gt.user)
-    .map((gt) => gt.team?.id);
+    .filter((gt) => gt.User || gt.userId)
+    .map((gt) => gt.Team?.id ?? gt.teamId);
 
   const getTeamGameTeam = (teamId) =>
-    gameTeams.find((gt) => gt.team?.id === teamId);
+    gameTeams.find((gt) => (gt.Team?.id ?? gt.teamId) === teamId);
 
   if (loading) {
     return (
@@ -192,7 +193,7 @@ export default function Lobby() {
               Auction <span className="gold-text">Lobby</span>
             </h1>
             <p className="text-white/40 font-inter text-sm mt-1">
-              {gameTeams.filter((gt) => gt.userId || gt.User).length} / 10 players joined
+              {gameTeams.filter((gt) => gt.User || gt.userId).length} / 10 players joined
             </p>
           </div>
 
@@ -247,10 +248,11 @@ export default function Lobby() {
                 const teamId = team.id;
                 const color = team.primaryColor || '#f59e0b';
                 const isTaken = takenTeamIds.includes(teamId);
-                const isMyTeam = selectedTeamId === teamId;
+                const isMyTeam = (selectedTeamId === teamId);
                 const occupant = getTeamGameTeam(teamId);
-                const occupantUser = occupant?.user;
-                const isOccupantMe = occupant?.user?.id === userId;
+                // Node backend serialises as 'User' (capital)
+                const occupantUser = occupant?.User || occupant?.user;
+                const isOccupantMe = (occupant?.User?.id ?? occupant?.userId) === userId;
 
                 return (
                   <button
@@ -342,7 +344,7 @@ export default function Lobby() {
                 <Users size={16} className="text-ipl-gold" />
                 <h3 className="font-rajdhani font-bold text-base text-white/80">Players</h3>
                 <span className="ml-auto text-xs text-white/30 font-inter">
-                  {gameTeams.filter((gt) => gt.user).length} joined
+                  {gameTeams.filter((gt) => gt.User || gt.userId).length} joined
                 </span>
               </div>
 
@@ -353,10 +355,10 @@ export default function Lobby() {
                   </p>
                 ) : (
                   gameTeams.map((gt, i) => {
-                    const u = gt.user;
-                    const t = gt.team;
+                    const u = gt.User || gt.user;
+                    const t = gt.Team || gt.team;
                     const color = t?.primaryColor || '#9ca3af';
-                    const isMe = u?.id === userId;
+                    const isMe = (u?.id ?? gt.userId) === userId;
 
                     return (
                       <div

@@ -7,10 +7,10 @@ const BASE_URL = import.meta.env.VITE_API_URL
   ? `${import.meta.env.VITE_API_URL}/api`
   : import.meta.env.PROD
   ? '/api'
-  : 'http://localhost:8000/api';
+  : 'http://localhost:5000/api';
 
 async function fetchUserFromToken(token) {
-  const res = await fetch(`${BASE_URL}/auth/me/`, {
+  const res = await fetch(`${BASE_URL}/auth/me`, {
     headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
   });
   if (!res.ok) throw new Error('Token invalid');
@@ -53,8 +53,8 @@ export function AuthProvider({ children }) {
   const login = useCallback(async (username, password) => {
     const data  = await apiLogin({ username, password });
     const tok   = data.access || data.token;
-    // The login endpoint (JWT) doesn't return user info — fetch it
-    const userData = await fetchUserFromToken(tok);
+    // Node.js auth endpoint returns { token, user } directly
+    const userData = data.user || await fetchUserFromToken(tok);
     _saveToken(tok, userData);
     return data;
   }, [_saveToken]);

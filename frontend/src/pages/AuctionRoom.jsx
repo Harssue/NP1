@@ -95,14 +95,18 @@ export default function AuctionRoom() {
     }
   }, [lastEvent]);
 
-  // Find my game team (lowercase fields from Django serializer)
-  const myGameTeam = gameTeams.find((gt) => gt.user?.id === userId);
+  // Node backend serialises as 'User' / 'Team' (capitalised)
+  const myGameTeam = gameTeams.find(
+    (gt) =>
+      (gt.User?.id ?? gt.userId) === userId ||
+      gt.user?.id === userId // fallback for live socket updates
+  );
   const myGameTeamId = myGameTeam?.id;
 
-  // Sold state info
+  // Sold state info — match capitalised Team fields
   const soldToTeam =
     status === 'sold' && highestBidder
-      ? gameTeams.find((gt) => gt.id === highestBidder?.gameTeamId)
+      ? gameTeams.find((gt) => (gt.id || gt._id) === highestBidder?.gameTeamId)
       : null;
 
   const handleBid = useCallback(
@@ -212,13 +216,13 @@ export default function AuctionRoom() {
         <div className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-black/90 backdrop-blur-sm animate-fade-in px-4">
           <div className="relative text-center p-12 max-w-4xl w-full glass rounded-3xl overflow-hidden"
                style={{
-                 borderColor: `${soldToTeam.team?.primaryColor || '#f59e0b'}44`,
-                 boxShadow: `0 0 120px ${soldToTeam.team?.primaryColor || '#f59e0b'}33`,
+                 borderColor: `${soldToTeam.Team?.primaryColor || soldToTeam.team?.primaryColor || '#f59e0b'}44`,
+                 boxShadow: `0 0 120px ${soldToTeam.Team?.primaryColor || soldToTeam.team?.primaryColor || '#f59e0b'}33`,
                }}>
             {/* Background Watermark */}
             <div className="absolute inset-0 flex items-center justify-center opacity-5 pointer-events-none">
-              <span className="text-[12rem] font-rajdhani font-bold whitespace-nowrap" style={{ color: soldToTeam.team?.primaryColor || '#ffffff' }}>
-                {soldToTeam.team?.shortName}
+              <span className="text-[12rem] font-rajdhani font-bold whitespace-nowrap" style={{ color: soldToTeam.Team?.primaryColor || soldToTeam.team?.primaryColor || '#ffffff' }}>
+                {soldToTeam.Team?.shortName || soldToTeam.team?.shortName}
               </span>
             </div>
 
@@ -228,10 +232,10 @@ export default function AuctionRoom() {
               </h2>
               
               <div className="inline-flex items-center gap-4 px-8 py-3 rounded-full mb-12 shadow-2xl" 
-                   style={{ background: `${soldToTeam.team?.primaryColor || '#f59e0b'}22`, border: `1px solid ${soldToTeam.team?.primaryColor || '#f59e0b'}66` }}>
-                 <Trophy size={28} style={{ color: soldToTeam.team?.primaryColor || '#f59e0b' }} className="animate-pulse" />
-                 <span className="font-rajdhani font-bold tracking-[0.2em] text-2xl" style={{ color: soldToTeam.team?.primaryColor || '#f59e0b' }}>
-                   SOLD TO {soldToTeam.team?.name?.toUpperCase()}
+                   style={{ background: `${soldToTeam.Team?.primaryColor || soldToTeam.team?.primaryColor || '#f59e0b'}22`, border: `1px solid ${soldToTeam.Team?.primaryColor || soldToTeam.team?.primaryColor || '#f59e0b'}66` }}>
+                 <Trophy size={28} style={{ color: soldToTeam.Team?.primaryColor || soldToTeam.team?.primaryColor || '#f59e0b' }} className="animate-pulse" />
+                 <span className="font-rajdhani font-bold tracking-[0.2em] text-2xl" style={{ color: soldToTeam.Team?.primaryColor || soldToTeam.team?.primaryColor || '#f59e0b' }}>
+                   SOLD TO {(soldToTeam.Team?.name || soldToTeam.team?.name)?.toUpperCase()}
                  </span>
               </div>
 
@@ -246,7 +250,7 @@ export default function AuctionRoom() {
         </div>
       )}
 
-      {status === 'sold' && currentPlayer && !soldToTeam && (
+      {status === 'unsold' && currentPlayer && (
         <div className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-black/90 backdrop-blur-sm animate-fade-in px-4">
           <div className="text-center p-12 max-w-4xl w-full glass rounded-3xl overflow-hidden border-red-500/20 shadow-[0_0_120px_rgba(239,68,68,0.15)]">
             <h2 className="text-6xl md:text-8xl font-rajdhani font-bold text-white/60 mb-10 animate-slide-up drop-shadow-2xl">
@@ -274,8 +278,8 @@ export default function AuctionRoom() {
             basePrice={currentPlayer?.basePrice}
             status={status}
             soldPrice={status === 'sold' ? currentBid : null}
-            soldTo={soldToTeam?.team?.name || highestBidder?.teamName}
-            soldToColor={soldToTeam?.team?.primaryColor || highestBidder?.teamColor}
+            soldTo={soldToTeam?.Team?.name || soldToTeam?.team?.name || highestBidder?.teamName}
+            soldToColor={soldToTeam?.Team?.primaryColor || soldToTeam?.team?.primaryColor || highestBidder?.teamColor}
           />
 
           {/* My team quick info */}
@@ -285,12 +289,12 @@ export default function AuctionRoom() {
                 <div
                   className="w-6 h-6 rounded-lg flex items-center justify-center text-[10px] font-rajdhani font-bold"
                   style={{
-                    background: `${myGameTeam.team?.primaryColor || '#f59e0b'}22`,
-                    color: myGameTeam.team?.primaryColor || '#f59e0b',
-                    border: `1px solid ${myGameTeam.team?.primaryColor || '#f59e0b'}44`,
+                    background: `${myGameTeam.Team?.primaryColor || myGameTeam.team?.primaryColor || '#f59e0b'}22`,
+                    color: myGameTeam.Team?.primaryColor || myGameTeam.team?.primaryColor || '#f59e0b',
+                    border: `1px solid ${myGameTeam.Team?.primaryColor || myGameTeam.team?.primaryColor || '#f59e0b'}44`,
                   }}
                 >
-                  {myGameTeam.team?.shortName || '?'}
+                  {myGameTeam.Team?.shortName || myGameTeam.team?.shortName || '?'}
                 </div>
                 <span className="font-rajdhani font-bold text-sm text-white/80">
                   Your Team
@@ -365,7 +369,7 @@ export default function AuctionRoom() {
                   isHighestBidder={
                     highestBidder?.gameTeamId === (gt.id || gt._id)
                   }
-                  isCurrentUser={gt.user?.id === userId}
+                  isCurrentUser={(gt.User?.id ?? gt.userId ?? gt.user?.id) === userId}
                 />
               ))
             )}

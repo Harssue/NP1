@@ -10,16 +10,13 @@ export function SocketProvider({ children }) {
   const [connected, setConnected] = useState(false);
 
   useEffect(() => {
-    let baseUrl = import.meta.env.VITE_API_URL || (import.meta.env.PROD ? window.location.origin : 'http://localhost:8000');
-    try {
-      if (baseUrl.startsWith('http')) {
-        baseUrl = new URL(baseUrl).origin;
-      }
-    } catch (e) { /* ignore */ }
-    
-    const SOCKET_URL = baseUrl;
+    // In production the frontend is served by the same Node server (port 5000),
+    // so we connect to the same origin. In dev we target the Node dev server.
+    const SOCKET_URL = import.meta.env.VITE_API_URL
+      || (import.meta.env.PROD ? window.location.origin : 'http://localhost:5000');
+
     const socket = io(SOCKET_URL, {
-      path: '/api/socket.io',
+      // No custom path — use the default /socket.io
       transports: ['websocket', 'polling'],
       autoConnect: true,
       reconnection: true,
@@ -51,9 +48,10 @@ export function SocketProvider({ children }) {
     };
   }, [token]);
 
+  // Emit 'start-auction' (kebab-case, matching the backend listener)
   const emitStartAuction = useCallback((gameId) => {
     if (socketRef.current) {
-      socketRef.current.emit('start_auction', { gameId });
+      socketRef.current.emit('start-auction', { gameId });
     }
   }, []);
 
