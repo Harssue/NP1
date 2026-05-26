@@ -1,12 +1,12 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
-import { Trophy, Mail, Lock, Eye, EyeOff, ArrowRight, AlertCircle } from 'lucide-react';
+import { Trophy, Mail, Lock, User, Eye, EyeOff, ArrowRight, AlertCircle } from 'lucide-react';
 
 export default function Login() {
   const { login } = useAuth();
   const navigate = useNavigate();
-  const [email, setEmail] = useState('');
+  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [showPass, setShowPass] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -14,17 +14,17 @@ export default function Login() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!email || !password) {
+    if (!username || !password) {
       setError('Please fill in all fields');
       return;
     }
     setLoading(true);
     setError('');
     try {
-      await login(email, password);
+      await login(username, password);
       navigate('/');
     } catch (err) {
-      setError(err.message || 'Invalid email or password');
+      setError(err.message || 'Invalid username or password');
     } finally {
       setLoading(false);
     }
@@ -57,21 +57,21 @@ export default function Login() {
           <h2 className="font-rajdhani font-bold text-2xl text-white mb-6">Welcome back</h2>
 
           <form onSubmit={handleSubmit} className="space-y-4">
-            {/* Email */}
+            {/* Username */}
             <div>
               <label className="block text-white/50 text-xs font-inter mb-1.5 ml-1">
-                Email address
+                Username
               </label>
               <div className="relative">
-                <Mail
+                <User
                   size={16}
                   className="absolute left-3.5 top-1/2 -translate-y-1/2 text-white/30"
                 />
                 <input
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="you@example.com"
+                  type="text"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  placeholder="CricketFan2025"
                   className="w-full bg-white/5 border border-white/10 rounded-xl pl-10 pr-4 py-3 text-white font-inter text-sm placeholder:text-white/20 focus:outline-none focus:border-ipl-gold/50 transition-colors"
                 />
               </div>

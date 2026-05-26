@@ -28,8 +28,8 @@ export function AuthProvider({ children }) {
     }
   }, []);
 
-  const login = useCallback(async (email, password) => {
-    const data = await apiLogin({ email, password });
+  const login = useCallback(async (username, password) => {
+    const data = await apiLogin({ username, password });
     const { token: newToken, user: newUser } = data;
     localStorage.setItem('ipl_token', newToken);
     setToken(newToken);

@@ -25,11 +25,11 @@ export async function apiRegister({ username, email, password }) {
   return handleResponse(res);
 }
 
-export async function apiLogin({ email, password }) {
+export async function apiLogin({ username, password }) {
   const res = await fetch(`${BASE_URL}/auth/login/`, {
     method: 'POST',
     headers: getHeaders(),
-    body: JSON.stringify({ email, password }),
+    body: JSON.stringify({ username, password }),
   });
   return handleResponse(res);
 }
