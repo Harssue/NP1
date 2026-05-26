@@ -43,6 +43,12 @@ export function SocketProvider({ children }) {
     };
   }, [token]);
 
+  const emitStartAuction = useCallback((gameId) => {
+    if (socketRef.current) {
+      socketRef.current.emit('start_auction', { gameId });
+    }
+  }, []);
+
   const joinLobby = useCallback((gameId, userId) => {
     if (socketRef.current) {
       socketRef.current.emit('join-lobby', { gameId, userId });
@@ -70,6 +76,7 @@ export function SocketProvider({ children }) {
         connected,
         joinLobby,
         placeBid,
+        emitStartAuction,
         on,
         off,
       }}

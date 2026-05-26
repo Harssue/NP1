@@ -58,7 +58,7 @@ export default function Landing() {
     setError('');
     try {
       const data = await apiCreateGame(user.id || user._id, token);
-      navigate(`/lobby/${data.game.id || data.game._id}`);
+      navigate(`/lobby/${data.game.id}`);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -76,7 +76,7 @@ export default function Landing() {
     setError('');
     try {
       const data = await apiJoinGame(lobbyCode.trim().toUpperCase(), user.id || user._id, token);
-      navigate(`/lobby/${data.game.id || data.game._id}`);
+      navigate(`/lobby/${data.game.id}`);
     } catch (err) {
       setError(err.message);
     } finally {

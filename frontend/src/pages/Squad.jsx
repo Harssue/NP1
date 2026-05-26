@@ -28,7 +28,7 @@ export default function Squad() {
         setGameTeams(gts);
 
         // Auto-select user's team first
-        const myTeam = gts.find(gt => gt.userId === userId || gt.User?.id === userId);
+        const myTeam = gts.find(gt => gt.user?.id === userId);
         if (myTeam) setSelectedTeamId(myTeam.id);
         else if (gts.length > 0) setSelectedTeamId(gts[0].id);
 
@@ -95,7 +95,7 @@ export default function Squad() {
           </Link>
           <div>
             <h1 className="font-rajdhani font-bold text-3xl gold-text">FINAL SQUADS</h1>
-            <p className="text-white/40 font-inter text-sm">Post-auction player lists for all 10 franchises</p>
+            <p className="text-white/40 font-inter text-sm">Post-auction player lists for all {gameTeams.length} franchises</p>
           </div>
           <div className="ml-auto flex items-center gap-2">
             <Trophy size={16} className="text-ipl-gold" />
@@ -106,7 +106,7 @@ export default function Squad() {
         {/* Team selector tabs */}
         <div className="flex gap-2 flex-wrap mb-6">
           {gameTeams.map((gt) => {
-            const isMe = gt.userId === userId || gt.User?.id === userId;
+            const isMe = gt.user?.id === userId || gt.User?.id === userId;
             const isSelected = gt.id === selectedTeamId;
             return (
               <button
@@ -118,11 +118,11 @@ export default function Squad() {
                     : 'glass text-white/60 hover:text-white'
                 }`}
                 style={isSelected ? {
-                  background: gt.Team?.primaryColor || '#f59e0b',
-                  boxShadow: `0 0 20px ${gt.Team?.primaryColor || '#f59e0b'}44`,
+                  background: gt.team?.primaryColor || gt.Team?.primaryColor || '#f59e0b',
+                  boxShadow: `0 0 20px ${gt.team?.primaryColor || '#f59e0b'}44`,
                 } : {}}
               >
-                {gt.Team?.shortName}
+                {gt.team?.shortName || gt.Team?.shortName}
                 {isMe && <Star size={8} className="absolute top-1 right-1 text-yellow-300" />}
               </button>
             );
@@ -134,29 +134,27 @@ export default function Squad() {
             {/* Team summary card */}
             <div
               className="glass rounded-3xl p-6 border"
-              style={{
-                borderColor: `${selectedTeam.Team?.primaryColor || '#f59e0b'}33`,
-                background: `${selectedTeam.Team?.primaryColor || '#f59e0b'}08`,
-              }}
+              style={{ borderColor: `${selectedTeam.team?.primaryColor || selectedTeam.Team?.primaryColor || '#f59e0b'}33`,
+                background: `${selectedTeam.team?.primaryColor || selectedTeam.Team?.primaryColor || '#f59e0b'}08` }}
             >
               {/* Team header */}
               <div className="flex items-center gap-4 mb-6">
                 <div
                   className="w-16 h-16 rounded-2xl flex items-center justify-center font-rajdhani font-bold text-xl"
                   style={{
-                    background: `${selectedTeam.Team?.primaryColor || '#f59e0b'}22`,
-                    color: selectedTeam.Team?.primaryColor || '#f59e0b',
-                    border: `2px solid ${selectedTeam.Team?.primaryColor || '#f59e0b'}44`,
+                    background: `${selectedTeam.team?.primaryColor || selectedTeam.Team?.primaryColor || '#f59e0b'}22`,
+                    color: selectedTeam.team?.primaryColor || selectedTeam.Team?.primaryColor || '#f59e0b',
+                    border: `2px solid ${selectedTeam.team?.primaryColor || selectedTeam.Team?.primaryColor || '#f59e0b'}44`,
                   }}
                 >
-                  {selectedTeam.Team?.logoInitials || selectedTeam.Team?.shortName}
+                  {selectedTeam.team?.logoInitials || selectedTeam.team?.shortName || selectedTeam.Team?.shortName}
                 </div>
                 <div>
                   <h2 className="font-rajdhani font-bold text-xl text-white">
-                    {selectedTeam.Team?.name}
+                    {selectedTeam.team?.name || selectedTeam.Team?.name}
                   </h2>
                   <p className="text-white/40 font-inter text-xs">
-                    {selectedTeam.isAI ? '🤖 AI Controlled' : `👤 ${selectedTeam.User?.username || 'Human'}`}
+                    {selectedTeam.isAI ? '🤖 AI Controlled' : `👤 ${selectedTeam.user?.username || selectedTeam.User?.username || 'Human'}`}
                   </p>
                 </div>
               </div>
@@ -182,7 +180,7 @@ export default function Squad() {
                 <div className="flex justify-between items-center py-2">
                   <span className="text-white/50 font-inter text-sm">Total Spend</span>
                   <span className="font-rajdhani font-bold text-green-400">
-                    {formatCrore(9000 - (selectedTeam.purseRemaining || 0))}
+                    {formatCrore((selectedTeam.game?.startingPurse || 9000) - (selectedTeam.purseRemaining || 0))}
                   </span>
                 </div>
               </div>

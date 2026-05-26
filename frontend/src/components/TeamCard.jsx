@@ -4,10 +4,10 @@ import { formatCrore } from '../api/index.js';
 export default function TeamCard({ gameTeam, isHighestBidder, isCurrentUser, compact }) {
   if (!gameTeam) return null;
 
-  const team = gameTeam.Team || {};
-  const user = gameTeam.User;
-  const isAI = !user;
-  const color = team.primaryColor || team.color || '#f59e0b';
+  const team = gameTeam.team || gameTeam.Team || {};
+  const user = gameTeam.user || gameTeam.User;
+  const isAI = gameTeam.isAI || !user;
+  const color = team.primaryColor || '#f59e0b';
   const purse = gameTeam.purseRemaining ?? 0;
   const maxPurse = 9000; // 90 Cr in lakhs
   const pursePercent = Math.min(100, Math.round((purse / maxPurse) * 100));

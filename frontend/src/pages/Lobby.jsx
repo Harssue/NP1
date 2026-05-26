@@ -33,7 +33,7 @@ const IPL_TEAM_COLORS = {
 export default function Lobby() {
   const { gameId } = useParams();
   const { user, token } = useAuth();
-  const { on, off, joinLobby } = useSocket();
+  const { on, off, joinLobby, emitStartAuction } = useSocket();
   const navigate = useNavigate();
 
   const [game, setGame] = useState(null);
@@ -46,7 +46,7 @@ export default function Lobby() {
   const [selectedTeamId, setSelectedTeamId] = useState(null);
   const [selecting, setSelecting] = useState(false);
 
-  const userId = user?.id || user?._id;
+  const userId = user?.id;
 
   const fetchState = useCallback(async () => {
     try {
@@ -56,19 +56,21 @@ export default function Lobby() {
       ]);
       setGame(stateData.game);
       setGameTeams(stateData.gameTeams || []);
-      setAllTeams(teamsData.teams || teamsData || []);
+      // DRF router returns a paginated object { count, results } or plain array
+      const rawTeams = teamsData.results || teamsData;
+      setAllTeams(Array.isArray(rawTeams) ? rawTeams : []);
 
       if (stateData.game.status !== 'waiting') {
         navigate(`/auction/${gameId}`);
         return;
       }
 
-      // Find my current team
+      // Find my current team (using lowercase serializer fields)
       const myGT = (stateData.gameTeams || []).find(
-        (gt) => gt.userId === userId || gt.User?.id === userId || gt.User?._id === userId
+        (gt) => gt.user?.id === userId
       );
       if (myGT) {
-        setSelectedTeamId(myGT.teamId || myGT.Team?.id || myGT.Team?._id);
+        setSelectedTeamId(myGT.team?.id);
       }
     } catch (err) {
       setError(err.message);
@@ -148,8 +150,7 @@ export default function Lobby() {
     setError('');
     try {
       await apiStartGame(gameId, token);
-      // Navigation will happen via socket auction-started event
-      // But also navigate directly as fallback
+      emitStartAuction(gameId);
       navigate(`/auction/${gameId}`);
     } catch (err) {
       setError(err.message);
@@ -157,16 +158,16 @@ export default function Lobby() {
     }
   };
 
-  const isHost = game?.hostId === userId || game?.hostUserId === userId || game?.createdBy === userId;
+  const isHost = game?.host?.id === userId;
   const myGameTeam = gameTeams.find(
-    (gt) => gt.userId === userId || gt.User?.id === userId || gt.User?._id === userId
+    (gt) => gt.user?.id === userId
   );
   const takenTeamIds = gameTeams
-    .filter((gt) => gt.userId || gt.User)
-    .map((gt) => gt.teamId || gt.Team?.id || gt.Team?._id);
+    .filter((gt) => gt.user)
+    .map((gt) => gt.team?.id);
 
   const getTeamGameTeam = (teamId) =>
-    gameTeams.find((gt) => (gt.teamId || gt.Team?.id || gt.Team?._id) === teamId);
+    gameTeams.find((gt) => gt.team?.id === teamId);
 
   if (loading) {
     return (
@@ -243,16 +244,13 @@ export default function Lobby() {
 
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-2 xl:grid-cols-3 gap-3">
               {allTeams.map((team) => {
-                const teamId = team.id || team._id;
-                const color = team.primaryColor || team.color || '#f59e0b';
+                const teamId = team.id;
+                const color = team.primaryColor || '#f59e0b';
                 const isTaken = takenTeamIds.includes(teamId);
                 const isMyTeam = selectedTeamId === teamId;
                 const occupant = getTeamGameTeam(teamId);
-                const occupantUser = occupant?.User;
-                const isOccupantMe =
-                  occupant?.userId === userId ||
-                  occupant?.User?.id === userId ||
-                  occupant?.User?._id === userId;
+                const occupantUser = occupant?.user;
+                const isOccupantMe = occupant?.user?.id === userId;
 
                 return (
                   <button
@@ -344,7 +342,7 @@ export default function Lobby() {
                 <Users size={16} className="text-ipl-gold" />
                 <h3 className="font-rajdhani font-bold text-base text-white/80">Players</h3>
                 <span className="ml-auto text-xs text-white/30 font-inter">
-                  {gameTeams.filter((gt) => gt.userId || gt.User).length} joined
+                  {gameTeams.filter((gt) => gt.user).length} joined
                 </span>
               </div>
 
@@ -355,11 +353,10 @@ export default function Lobby() {
                   </p>
                 ) : (
                   gameTeams.map((gt, i) => {
-                    const u = gt.User;
-                    const t = gt.Team;
-                    const color = t?.primaryColor || t?.color || '#9ca3af';
-                    const isMe =
-                      gt.userId === userId || u?.id === userId || u?._id === userId;
+                    const u = gt.user;
+                    const t = gt.team;
+                    const color = t?.primaryColor || '#9ca3af';
+                    const isMe = u?.id === userId;
 
                     return (
                       <div

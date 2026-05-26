@@ -4,7 +4,7 @@ import { apiGetAuctionState, apiPlaceBid } from '../api/index.js';
 import { useAuth } from '../context/AuthContext.jsx';
 
 export function useAuction(gameId) {
-  const { on, off, socket } = useSocket();
+  const { on, off, socket, placeBid: socketPlaceBid } = useSocket();
   const { token } = useAuth();
 
   const [currentPlayer, setCurrentPlayer] = useState(null);
@@ -201,12 +201,14 @@ export function useAuction(gameId) {
     async (gameTeamId, amount) => {
       try {
         await apiPlaceBid(gameId, gameTeamId, amount, token);
+        // Also emit socket event so room gets real-time update
+        if (socketPlaceBid) socketPlaceBid(gameId, gameTeamId, amount);
       } catch (err) {
         console.error('Bid error:', err);
         throw err;
       }
     },
-    [gameId, token]
+    [gameId, token, socketPlaceBid]
   );
 
   return {

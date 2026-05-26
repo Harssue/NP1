@@ -1,4 +1,4 @@
-const BASE_URL = import.meta.env.VITE_API_URL ? `${import.meta.env.VITE_API_URL}/api` : (import.meta.env.PROD ? '/api' : 'http://localhost:5000/api');
+const BASE_URL = import.meta.env.VITE_API_URL ? `${import.meta.env.VITE_API_URL}/api` : (import.meta.env.PROD ? '/api' : 'http://localhost:8000/api');
 
 function getHeaders(token) {
   const headers = { 'Content-Type': 'application/json' };
@@ -9,7 +9,7 @@ function getHeaders(token) {
 async function handleResponse(res) {
   const data = await res.json().catch(() => ({}));
   if (!res.ok) {
-    throw new Error(data.message || data.error || `HTTP error ${res.status}`);
+    throw new Error(data.detail || data.message || data.error || `HTTP error ${res.status}`);
   }
   return data;
 }
