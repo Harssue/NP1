@@ -20,6 +20,7 @@ export function useAuction(gameId) {
   const [isComplete, setIsComplete] = useState(false);
   const [loading, setLoading] = useState(true);
   const [remainingPlayers, setRemainingPlayers] = useState(0);
+  const [bidError, setBidError] = useState('');
 
   const timerRef = useRef(null);
   const serverClockOffsetRef = useRef(0);
@@ -212,6 +213,11 @@ export function useAuction(gameId) {
       );
     };
 
+    const handleBidError = ({ message }) => {
+      setBidError(message || 'Bid failed');
+      setTimeout(() => setBidError(''), 4000);
+    };
+
     on('lobby-state', handleLobbyState);
     on('auction-resumed', handleAuctionResumed);
     on('auction-started', handleAuctionStarted);
@@ -222,6 +228,7 @@ export function useAuction(gameId) {
     on('auction-complete', handleAuctionComplete);
     on('timer-tick', handleTimerTick);
     on('team-selected', handleTeamSelected);
+    on('bid-error', handleBidError);
 
     return () => {
       off('lobby-state', handleLobbyState);
@@ -234,6 +241,7 @@ export function useAuction(gameId) {
       off('auction-complete', handleAuctionComplete);
       off('timer-tick', handleTimerTick);
       off('team-selected', handleTeamSelected);
+      off('bid-error', handleBidError);
     };
   }, [socket, on, off, addLog]);
 
@@ -270,6 +278,7 @@ export function useAuction(gameId) {
     isComplete,
     loading,
     remainingPlayers,
+    bidError,
     placeBid,
   };
 }

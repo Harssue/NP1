@@ -20,6 +20,7 @@ export default function BidPanel({
   myGameTeam,
   myGameTeamId,
   onBid,
+  serverError,
 }) {
   const [bidding, setBidding] = useState(false);
   const [error, setError] = useState('');
@@ -149,11 +150,11 @@ export default function BidPanel({
         </div>
       )}
 
-      {/* Error message */}
-      {error && (
+      {/* Error message (local validation or server bid-error) */}
+      {(error || serverError) && (
         <div className="flex items-center gap-2 bg-red-500/10 border border-red-500/30 rounded-xl px-4 py-2.5 animate-slide-up">
           <AlertCircle size={14} className="text-red-400 flex-shrink-0" />
-          <p className="text-red-400 text-xs font-inter">{error}</p>
+          <p className="text-red-400 text-xs font-inter">{error || serverError}</p>
         </div>
       )}
 

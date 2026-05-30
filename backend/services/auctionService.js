@@ -174,6 +174,12 @@ class AuctionService {
     if (amount <= live.currentBid) return { success: false, error: 'Bid must exceed current bid' };
     if (amount > teamState.purseRemaining) return { success: false, error: 'Insufficient purse' };
 
+    // Overseas player limit (max 8 per squad) — mirrors the AI check in aiService.js
+    const MAX_OVERSEAS = 8;
+    if (live.currentPlayer.nationality === 'Overseas' && teamState.overseasCount >= MAX_OVERSEAS) {
+      return { success: false, error: `Overseas limit reached (${MAX_OVERSEAS} overseas players max)` };
+    }
+
     const minNextBid = live.currentBid + getBidIncrement(live.currentBid);
     if (amount < minNextBid) return { success: false, error: `Minimum bid increment: ${minNextBid}L` };
 

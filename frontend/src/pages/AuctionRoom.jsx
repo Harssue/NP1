@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useSocket } from '../context/SocketContext.jsx';
@@ -31,6 +31,7 @@ export default function AuctionRoom() {
   const [gameError, setGameError] = useState('');
   const [notification, setNotification] = useState(null);
   const [soldCard, setSoldCard] = useState(null);
+  const soldCardTimerRef = useRef(null);
 
   const userId = user?.id || user?._id;
 
@@ -48,6 +49,7 @@ export default function AuctionRoom() {
     lastEvent,
     isComplete,
     loading: auctionLoading,
+    bidError,
     placeBid,
   } = useAuction(gameId);
 
@@ -71,9 +73,14 @@ export default function AuctionRoom() {
     }
   }, [gameId, userId, connected, joinLobby]);
 
-  // Show sold card overlay for 3 seconds
+  // Show sold card overlay for 3 seconds.
+  // Timer lives in a ref so it survives re-renders — if we put clearTimeout in the
+  // useEffect cleanup, React would cancel it the moment lastEvent changes to the
+  // next 'player-nominated' event, leaving the card stuck open forever.
   useEffect(() => {
     if (lastEvent?.type !== 'sold') return;
+    // Cancel any previous timer (e.g. back-to-back sold events)
+    clearTimeout(soldCardTimerRef.current);
     setSoldCard({
       player:    lastEvent.player,
       soldTo:    lastEvent.soldTo,
@@ -81,9 +88,11 @@ export default function AuctionRoom() {
       color:     lastEvent.soldToColor || '#f59e0b',
       price:     lastEvent.soldPrice,
     });
-    const t = setTimeout(() => setSoldCard(null), 3000);
-    return () => clearTimeout(t);
+    soldCardTimerRef.current = setTimeout(() => setSoldCard(null), 3000);
   }, [lastEvent]);
+
+  // Clean up timer on unmount only
+  useEffect(() => () => clearTimeout(soldCardTimerRef.current), []);
 
   // Show toast notification on events (except sold — handled by card above)
   useEffect(() => {
@@ -376,6 +385,7 @@ export default function AuctionRoom() {
               myGameTeam={myGameTeam}
               myGameTeamId={myGameTeamId}
               onBid={handleBid}
+              serverError={bidError}
             />
           </div>
 
